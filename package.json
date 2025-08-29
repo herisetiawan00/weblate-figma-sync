@@ -23,9 +23,8 @@
     "main": "src/main.ts",
     "ui": "src/ui.tsx",
     "networkAccess": {
-      "allowedDomains": [
-        "none"
-      ],
+      "reasoning": "Weblate host be dynamic since it can be self-hosted",
+      "allowedDomains": [ "*" ],
       "devAllowedDomains": [
         "http://localhost:9090"
       ]

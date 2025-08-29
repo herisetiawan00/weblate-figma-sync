@@ -1,5 +1,5 @@
 import { emit, on, once } from "@create-figma-plugin/utilities";
-import { CloseHandler, GetCollectionHandler, ICompleteTranslation, IWeblateComponentsResponse, IWeblateTranslationResponse, SetCollectionHandler, SyncFinishHandler, SyncInfoHandler, SyncWeblateHandler } from "./types";
+import { CloseHandler, GetCollectionHandler, IWeblateComponentsResponse, IWeblateTranslationResponse, SetCollectionHandler, SyncFinishHandler, SyncInfoHandler, SyncWeblateHandler } from "./types";
 import { camelToTitle } from "./helper";
 
 const setupHandlers = () => {

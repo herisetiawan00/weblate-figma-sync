@@ -55,9 +55,3 @@ export interface IWeblateTranslationResponse {
   }[]
 }
 
-export interface ICompleteTranslation {
-  en: { [x: string]: string }
-  id: { [x: string]: string }
-  en_sharia: { [x: string]: string }
-  id_sharia: { [x: string]: string }
-}
