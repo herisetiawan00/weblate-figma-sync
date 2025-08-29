@@ -126,7 +126,7 @@ function Plugin() {
       />
       <VerticalSpace space="extraLarge" />
       <Columns space="extraSmall">
-        <Button fullWidth onClick={handleSyncButtonClick}>
+        <Button fullWidth onClick={handleSyncButtonClick} disabled={!baseUrl || !collectionId || !token}>
           Sync
         </Button>
       </Columns>
