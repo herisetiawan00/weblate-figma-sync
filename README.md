@@ -1,4 +1,8 @@
-# Preact Rectangles
+# Weblate Figma Sync
+
+Unofficial Weblate plugin to sync and import the translation from Weblate into Figma Variables
+
+*currently only support importing from Simple JSON file format
 
 ## Development guide
 
