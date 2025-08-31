@@ -1,12 +1,13 @@
 import { emit, on, once } from "@create-figma-plugin/utilities";
-import { CloseHandler, GetCollectionHandler, IWeblateComponentsResponse, IWeblateTranslationResponse, SetCollectionHandler, SyncFinishHandler, SyncInfoHandler, SyncWeblateHandler } from "./types";
-import { camelToTitle } from "./helper";
+import { IClose, ICollectionFetch, ICollectionResult, IWeblateSyncFinish, IWeblateSyncStart, IWeblateSyncUpdate } from "./event";
+import { IWeblateComponentsResponse, IWeblateTranslationResponse } from "../domain/weblate/weblate.types";
+import { camelToTitle } from "../utils/string.utils";
 
 const setupHandlers = () => {
-  once<CloseHandler>('CLOSE', figma.closePlugin)
-  on<SyncWeblateHandler>('SYNC', async (config) => {
+  once<IClose>('CLOSE', figma.closePlugin)
+  on<IWeblateSyncStart>('W_SYNC_START', async (config) => {
     try {
-      emit<SyncInfoHandler>('SYNC_INFO', 'get components from url...');
+      emit<IWeblateSyncUpdate>('W_SYNC_UPDATE', 'get components from url...');
 
       const headers = { Authorization: `Token ${config.token}` }
       const components = await fetch(`${config.baseUrl}/api/components/`, {
@@ -15,7 +16,7 @@ const setupHandlers = () => {
 
       const componentsJson: IWeblateComponentsResponse = await components.json();
 
-      emit<SyncInfoHandler>('SYNC_INFO', `found ${componentsJson.results.length} components, get translations...`);
+      emit<IWeblateSyncUpdate>('W_SYNC_UPDATE', `found ${componentsJson.results.length} components, get translations...`);
 
       const translationUrls = componentsJson.results.map((c) => c.translations_url);
 
@@ -26,7 +27,7 @@ const setupHandlers = () => {
       let result: { [x: string]: { [x: string]: string } } = {}
 
       const countFiles = translationsJsons.reduce((acc, translation) => acc + translation.results.length, 0);
-      emit<SyncInfoHandler>('SYNC_INFO', `found ${countFiles} translation files, downloading...`);
+      emit<IWeblateSyncUpdate>('W_SYNC_UPDATE', `found ${countFiles} translation files, downloading...`);
 
       await Promise.all(
         translationsJsons.map(
@@ -44,7 +45,7 @@ const setupHandlers = () => {
 
       const countKeys = Object.entries(result).reduce((acc, translation) => acc + Object.values(translation).length, 0);
 
-      emit<SyncInfoHandler>('SYNC_INFO', `found ${countKeys} translation keys, importing...`);
+      emit<IWeblateSyncUpdate>('W_SYNC_UPDATE', `found ${countKeys} translation keys, importing...`);
 
       const collection = figma.variables.getVariableCollectionById(config.collection);
 
@@ -76,14 +77,14 @@ const setupHandlers = () => {
         );
       }
 
-      emit<SyncFinishHandler>('SYNC_FINISH', true);
+      emit<IWeblateSyncFinish>('W_SYNC_FINISH', { success: true });
     } catch (e) {
-      emit<SyncFinishHandler>('SYNC_FINISH', false);
+      emit<IWeblateSyncFinish>('W_SYNC_FINISH', { success: false, error: `${e}` });
     }
   });
-  on<GetCollectionHandler>('GET_COLLECTION', async () => {
+  on<ICollectionFetch>('C_COLLECTION_FETCH', async () => {
     const collection = figma.variables.getLocalVariableCollections();
-    emit<SetCollectionHandler>('SET_COLLECTION', collection.map(({ id, name }) => ({ id, name })));
+    emit<ICollectionResult>('C_COLLECTION_RESULT', collection.map(({ id, name }) => ({ id, name })));
   });
 }
 
