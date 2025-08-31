@@ -1,5 +1,4 @@
 import { EventHandler } from "@create-figma-plugin/utilities";
-import { Route } from "./constants/routes";
 import { ICollection, IWeblateConfiguration } from "./types";
 
 export interface IClose extends EventHandler {
@@ -7,23 +6,9 @@ export interface IClose extends EventHandler {
   handler: () => void;
 }
 
-export interface INavigationReplace extends EventHandler {
-  name: 'N_REPLACE';
-  handler: (args: { name: Route, args?: any }) => void;
-}
-
-export interface INavigationPush extends EventHandler {
-  name: 'N_PUSH';
-  handler: (args: { name: Route, args?: any }) => void;
-}
-
-export interface INavigationPop extends EventHandler {
-  name: 'N_POP';
-}
-
-export interface INavigationPopUntil extends EventHandler {
-  name: 'N_POP_UNTIL';
-  handler: (routeName: Route) => void;
+export interface IReset extends EventHandler {
+  name: 'RESET';
+  handler: () => void;
 }
 
 export interface IWeblateSyncStart extends EventHandler {
@@ -49,4 +34,14 @@ export interface ICollectionFetch extends EventHandler {
 export interface ICollectionResult extends EventHandler {
   name: 'C_COLLECTION_RESULT';
   handler: (collections: ICollection[]) => void;
+}
+
+export interface IConfigurationFetch extends EventHandler {
+  name: 'C_CONFIGURATION_FETCH';
+  handler: () => void;
+}
+
+export interface IConfigurationResult extends EventHandler {
+  name: 'C_CONFIGURATION_RESULT';
+  handler: (config: IWeblateConfiguration) => void;
 }

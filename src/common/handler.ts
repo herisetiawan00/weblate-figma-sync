@@ -1,5 +1,5 @@
-import { emit, on, once } from "@create-figma-plugin/utilities";
-import { IClose, ICollectionFetch, ICollectionResult, IWeblateSyncFinish, IWeblateSyncStart, IWeblateSyncUpdate } from "./event";
+import { emit, on, once, showUI } from "@create-figma-plugin/utilities";
+import { IClose, ICollectionFetch, ICollectionResult, IConfigurationFetch, IConfigurationResult, IReset, IWeblateSyncFinish, IWeblateSyncStart, IWeblateSyncUpdate } from "./event";
 import { IWeblateComponentsResponse, IWeblateTranslationResponse } from "../domain/weblate/weblate.types";
 import { camelToTitle } from "../utils/string.utils";
 
@@ -7,6 +7,10 @@ const setupHandlers = () => {
   once<IClose>('CLOSE', figma.closePlugin)
   on<IWeblateSyncStart>('W_SYNC_START', async (config) => {
     try {
+      if (config.remember) {
+        await figma.clientStorage.setAsync('config', JSON.stringify(config));
+      }
+
       emit<IWeblateSyncUpdate>('W_SYNC_UPDATE', 'get components from url...');
 
       const headers = { Authorization: `Token ${config.token}` }
@@ -34,16 +38,18 @@ const setupHandlers = () => {
           (t) => Promise.all(
             t.results.map(
               (x) => fetch(
-                // x.file_url.replace('127.0.0.1', 'localhost'), { headers })
                 x.file_url, { headers })
                 .then((r) => r.json())
-                .then((j) => result[x.language_code] = { ...result[x.language_code] ?? {}, ...j })
+                .then((j) => {
+                  const language = config.languageAsMode ? x.language_code : x.language.name;
+                  return result[language] = { ...result[language] ?? {}, ...j };
+                })
             )
           )
         )
       )
 
-      const countKeys = Object.entries(result).reduce((acc, translation) => acc + Object.values(translation).length, 0);
+      const countKeys = Object.entries(result).reduce((acc, [,translation]) => acc + Object.values(Object.values(translation)).length, 0);
 
       emit<IWeblateSyncUpdate>('W_SYNC_UPDATE', `found ${countKeys} translation keys, importing...`);
 
@@ -51,31 +57,53 @@ const setupHandlers = () => {
 
       if (collection) {
         const modes = collection.modes;
-        // Object.entries({ 'en': result['en'] }).forEach(
         Object.entries(result).forEach(
           ([lang, translation]) => {
-            // const modeId = collection.modes[0].modeId;
-            const modeId = modes.find((m) => m.name == lang)?.modeId ?? collection.addMode(lang);
+            if (config.languageAsMode) {
+              const modeId = modes.find((m) => m.name == lang)?.modeId ?? collection.addMode(lang);
 
-            const localVariables = figma.variables.getLocalVariables('STRING');
-            const collectionVariables = localVariables.filter(v => v.variableCollectionId === config.collection);
-            const variableMap = new Map(collectionVariables.map(v => [v.name, v]));
+              const localVariables = figma.variables.getLocalVariables('STRING');
+              const collectionVariables = localVariables.filter(v => v.variableCollectionId === config.collection);
+              const variableMap = new Map(collectionVariables.map(v => [v.name, v]));
 
-            Object.entries(translation).forEach(
-              ([key, value]) => {
-                const name = key.split('.').map(camelToTitle).join('/');
-                const existingVariable = variableMap.get(name);
-                if (existingVariable) {
-                  existingVariable.setValueForMode(modeId, value);
-                } else {
-                  const newVariable = figma.variables.createVariable(name, config.collection, 'STRING');
-                  newVariable.setValueForMode(modeId, value);
+              Object.entries(translation).forEach(
+                ([key, value]) => {
+                  const name = key.split('.').map(camelToTitle).join('/');
+                  const existingVariable = variableMap.get(name);
+                  if (existingVariable) {
+                    existingVariable.setValueForMode(modeId, value);
+                  } else {
+                    const newVariable = figma.variables.createVariable(name, config.collection, 'STRING');
+                    newVariable.setValueForMode(modeId, value);
+                  }
                 }
-              }
-            );
+              );
+            } else {
+              const modeId = collection.modes[0].modeId;
+
+              const sanitizedLanguage = lang.replace(/[^a-zA-Z0-9 ]/g, "").replace(/\s+/g, " ").trim()
+              const localVariables = figma.variables.getLocalVariables('STRING');
+              const collectionVariables = localVariables.filter(v => v.variableCollectionId === config.collection);
+              const variableMap = new Map(collectionVariables.map(v => [v.name, v]));
+
+              Object.entries(translation).forEach(
+                ([key, value]) => {
+                  const name = [sanitizedLanguage, ...key.split('.').map(camelToTitle)].join('/');
+                  const existingVariable = variableMap.get(name);
+                  if (existingVariable) {
+                    existingVariable.setValueForMode(modeId, value);
+                  } else {
+                    const newVariable = figma.variables.createVariable(name, config.collection, 'STRING');
+                    newVariable.setValueForMode(modeId, value);
+                  }
+                }
+              );
+            }
           }
         );
       }
+
+      emit<IWeblateSyncUpdate>('W_SYNC_UPDATE', `Import finished`);
 
       emit<IWeblateSyncFinish>('W_SYNC_FINISH', { success: true });
     } catch (e) {
@@ -85,6 +113,15 @@ const setupHandlers = () => {
   on<ICollectionFetch>('C_COLLECTION_FETCH', async () => {
     const collection = figma.variables.getLocalVariableCollections();
     emit<ICollectionResult>('C_COLLECTION_RESULT', collection.map(({ id, name }) => ({ id, name })));
+  });
+  on<IConfigurationFetch>('C_CONFIGURATION_FETCH', async () => {
+    const config = await figma.clientStorage.getAsync('config');
+    if (config) {
+      emit<IConfigurationResult>('C_CONFIGURATION_RESULT', JSON.parse(config));
+    }
+  });
+  on<IReset>('RESET', () => {
+    showUI({ height: 340, width: 240 })
   });
 }
 

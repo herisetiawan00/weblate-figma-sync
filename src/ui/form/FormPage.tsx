@@ -13,13 +13,14 @@ import { h } from 'preact';
 import { useCallback, useEffect, useState } from "preact/hooks";
 import { emit, once } from '@create-figma-plugin/utilities';
 import { ICollection } from '../../common/types';
-import { ICollectionFetch, ICollectionResult, INavigationPush, IWeblateSyncStart } from '../../common/event';
+import { ICollectionFetch, ICollectionResult, IConfigurationFetch, IConfigurationResult, IWeblateSyncStart } from '../../common/event';
 
-const FormPage = () => {
+const FormPage = ({ onSubmit }: { onSubmit: () => void }) => {
   const [baseUrl, setBaseUrl] = useState<string>('');
   const [collection, setCollection] = useState<string>('');
   const [token, setToken] = useState<string>('');
   const [remember, setRemember] = useState<boolean>(false);
+  const [languageAsMode, setLanguageAsMode] = useState<boolean>(false);
 
   const [collections, setCollections] = useState<ICollection[]>([]);
 
@@ -27,13 +28,26 @@ const FormPage = () => {
     once<ICollectionResult>('C_COLLECTION_RESULT', setCollections);
   }, [collections]);
 
-  useEffect(() => emit<ICollectionFetch>('C_COLLECTION_FETCH'), []);
+  useEffect(() => {
+    once<IConfigurationResult>('C_CONFIGURATION_RESULT', (config) => {
+      setBaseUrl(config.baseUrl);
+      setCollection(config.collection);
+      setToken(config.token);
+      setRemember(config.remember);
+      setLanguageAsMode(config.languageAsMode);
+    });
+  }, []);
+
+  useEffect(() => {
+    emit<IConfigurationFetch>('C_CONFIGURATION_FETCH');
+    emit<ICollectionFetch>('C_COLLECTION_FETCH');
+  }, []);
 
   const handleSyncButton = useCallback(() => {
-    emit<INavigationPush>('N_PUSH', { name: '/loading' });
+    onSubmit();
     emit<IWeblateSyncStart>(
       'W_SYNC_START',
-      { baseUrl, collection, token, remember }
+      { baseUrl, collection, token, remember, languageAsMode }
     )
   }, [baseUrl, collection, token, remember]);
 
@@ -72,6 +86,12 @@ const FormPage = () => {
         onClick={() => setRemember(!remember)}
         value={remember}>
         <Text>Remember configuration</Text>
+      </Checkbox>
+      <VerticalSpace space="large" />
+      <Checkbox
+        onClick={() => setLanguageAsMode(!languageAsMode)}
+        value={languageAsMode}>
+        <Text>Use language as variable mode</Text>
       </Checkbox>
       <VerticalSpace space="extraLarge" />
       <Columns space="extraSmall">
