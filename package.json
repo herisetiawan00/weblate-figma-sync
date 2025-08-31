@@ -15,19 +15,22 @@
     "watch": "build-figma-plugin --typecheck --watch"
   },
   "figma-plugin": {
+    "id": "1543244001629754297",
     "editorType": [
       "figma"
     ],
-    "id": "weblate-sync",
     "name": "Weblate Sync",
     "main": "src/main.ts",
     "ui": "src/ui.tsx",
     "networkAccess": {
       "reasoning": "Weblate host be dynamic since it can be self-hosted",
-      "allowedDomains": [ "*" ],
+      "allowedDomains": [
+        "*"
+      ],
       "devAllowedDomains": [
         "http://localhost:9090"
       ]
     }
-  }
+  },
+  "documentAccess": "dynamic-page"
 }
