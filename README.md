@@ -1,5 +1,7 @@
 # Weblate Figma Sync
 
+[[Weblate Figma Sync Plugin]](https://www.figma.com/community/plugin/1543244001629754297)
+
 Unofficial Weblate plugin to sync and import the translation from Weblate into Figma Variables
 
 *currently only support importing from Simple JSON file format
