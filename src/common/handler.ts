@@ -53,16 +53,16 @@ const setupHandlers = () => {
 
       emit<IWeblateSyncUpdate>('W_SYNC_UPDATE', `found ${countKeys} translation keys, importing...`);
 
-      const collection = figma.variables.getVariableCollectionById(config.collection);
+      const collection = await figma.variables.getVariableCollectionByIdAsync(config.collection);
 
       if (collection) {
         const modes = collection.modes;
         Object.entries(result).forEach(
-          ([lang, translation]) => {
+          async ([lang, translation]) => {
             if (config.languageAsMode) {
               const modeId = modes.find((m) => m.name == lang)?.modeId ?? collection.addMode(lang);
 
-              const localVariables = figma.variables.getLocalVariables('STRING');
+              const localVariables = await figma.variables.getLocalVariablesAsync('STRING');
               const collectionVariables = localVariables.filter(v => v.variableCollectionId === config.collection);
               const variableMap = new Map(collectionVariables.map(v => [v.name, v]));
 
@@ -82,7 +82,7 @@ const setupHandlers = () => {
               const modeId = collection.modes[0].modeId;
 
               const sanitizedLanguage = lang.replace(/[^a-zA-Z0-9 ]/g, "").replace(/\s+/g, " ").trim()
-              const localVariables = figma.variables.getLocalVariables('STRING');
+              const localVariables = await figma.variables.getLocalVariablesAsync('STRING');
               const collectionVariables = localVariables.filter(v => v.variableCollectionId === config.collection);
               const variableMap = new Map(collectionVariables.map(v => [v.name, v]));
 
@@ -111,7 +111,7 @@ const setupHandlers = () => {
     }
   });
   on<ICollectionFetch>('C_COLLECTION_FETCH', async () => {
-    const collection = figma.variables.getLocalVariableCollections();
+    const collection = await figma.variables.getLocalVariableCollectionsAsync();
     emit<ICollectionResult>('C_COLLECTION_RESULT', collection.map(({ id, name }) => ({ id, name })));
   });
   on<IConfigurationFetch>('C_CONFIGURATION_FETCH', async () => {

@@ -15,6 +15,10 @@ const FinishPage = (args: { success: boolean, error?: string }) => {
           ? <Text style={{ color: '#78C841' }}>Sync Success</Text>
           : <Text style={{ color: '#E62727' }}>Sync Failed</Text>
       }
+      <VerticalSpace space="small" />
+      {
+        args.error && <Text style={{ color: '#E62727' }}>{args.error}</Text>
+      }
       <VerticalSpace space="extraLarge" />
       <Columns space="extraSmall">
         {!args.success &&
@@ -27,7 +31,6 @@ const FinishPage = (args: { success: boolean, error?: string }) => {
         </Button>
       </Columns>
     </Container>
-
   )
 }
 

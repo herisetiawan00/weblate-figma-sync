@@ -25,21 +25,26 @@ const FormPage = ({ onSubmit }: { onSubmit: () => void }) => {
   const [collections, setCollections] = useState<ICollection[]>([]);
 
   useEffect(() => {
-    once<ICollectionResult>('C_COLLECTION_RESULT', setCollections);
+    once<ICollectionResult>('C_COLLECTION_RESULT', (collections) => {
+      setCollections(collections)
+      emit<IConfigurationFetch>('C_CONFIGURATION_FETCH');
+    }
+    );
   }, [collections]);
 
   useEffect(() => {
     once<IConfigurationResult>('C_CONFIGURATION_RESULT', (config) => {
       setBaseUrl(config.baseUrl);
-      setCollection(config.collection);
       setToken(config.token);
       setRemember(config.remember);
       setLanguageAsMode(config.languageAsMode);
+      if (collections.some(c => c.name == config.collection)) {
+        setCollection(config.collection);
+      }
     });
   }, []);
 
   useEffect(() => {
-    emit<IConfigurationFetch>('C_CONFIGURATION_FETCH');
     emit<ICollectionFetch>('C_COLLECTION_FETCH');
   }, []);
 
@@ -61,6 +66,7 @@ const FormPage = ({ onSubmit }: { onSubmit: () => void }) => {
       <Textbox
         onValueInput={setBaseUrl}
         value={baseUrl}
+        placeholder='http://localhost:8080'
       />
       <VerticalSpace space="large" />
       <Text>
