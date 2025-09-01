@@ -22,7 +22,7 @@ const setupHandlers = () => {
 
       emit<IWeblateSyncUpdate>('W_SYNC_UPDATE', `found ${componentsJson.results.length} components, get translations...`);
 
-      const translationUrls = componentsJson.results.map((c) => c.translations_url);
+      const translationUrls = componentsJson.results.filter((c) => !c.is_glossary).map((c) => c.translations_url);
 
       const translations = await Promise.all(translationUrls.map((url) => fetch(url.replace('127.0.0.1', 'localhost'), { headers })));
 
@@ -73,7 +73,7 @@ const setupHandlers = () => {
                   if (existingVariable) {
                     existingVariable.setValueForMode(modeId, value);
                   } else {
-                    const newVariable = figma.variables.createVariable(name, config.collection, 'STRING');
+                    const newVariable = figma.variables.createVariable(name, collection, 'STRING');
                     newVariable.setValueForMode(modeId, value);
                   }
                 }
@@ -93,7 +93,7 @@ const setupHandlers = () => {
                   if (existingVariable) {
                     existingVariable.setValueForMode(modeId, value);
                   } else {
-                    const newVariable = figma.variables.createVariable(name, config.collection, 'STRING');
+                    const newVariable = figma.variables.createVariable(name, collection, 'STRING');
                     newVariable.setValueForMode(modeId, value);
                   }
                 }

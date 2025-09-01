@@ -38,7 +38,7 @@ const FormPage = ({ onSubmit }: { onSubmit: () => void }) => {
       setToken(config.token);
       setRemember(config.remember);
       setLanguageAsMode(config.languageAsMode);
-      if (collections.some(c => c.name == config.collection)) {
+      if (collections.some(c => c.id == config.collection)) {
         setCollection(config.collection);
       }
     });

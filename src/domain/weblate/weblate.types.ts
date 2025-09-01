@@ -2,6 +2,7 @@ export interface IWeblateComponentsResponse {
   results: {
     translations_url: string
     name: string
+    is_glossary: boolean
   }[]
 }
 
