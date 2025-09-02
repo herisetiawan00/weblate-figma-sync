@@ -1,0 +1,47 @@
+name: Build & Release on main
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: write  # required to create releases
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      # Change 'dist' to your build output folder; or use '.' to zip everything
+      - name: Compress artifacts
+        run: |
+          zip -r release-${{ github.sha }}.zip ./*
+      - name: Create Release for this commit
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: main-${{ github.sha }}        # unique tag per push
+          name: "Build from main @ ${{ github.sha }}"
+          body: |
+            Automated build from **main**.
+            - Commit: ${{ github.sha }}
+            - Run: ${{ github.run_id }}
+          files: release-${{ github.sha }}.zip
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
