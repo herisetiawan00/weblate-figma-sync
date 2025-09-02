@@ -12,12 +12,12 @@ const FinishPage = (args: { success: boolean, error?: string }) => {
     <Container space="medium" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100%', width: '100%' }}>
       {
         args.success
-          ? <Text style={{ color: '#78C841' }}>Sync Success</Text>
-          : <Text style={{ color: '#E62727' }}>Sync Failed</Text>
+          ? <Text align="center" style={{ color: '#78C841' }}>Sync Success</Text>
+          : <Text align="center" style={{ color: '#E62727' }}>Sync Failed</Text>
       }
       <VerticalSpace space="small" />
       {
-        args.error && <Text style={{ color: '#E62727' }}>{args.error}</Text>
+        args.error && <Text align="center" style={{ color: '#E62727' }}>{args.error}</Text>
       }
       <VerticalSpace space="extraLarge" />
       <Columns space="extraSmall">

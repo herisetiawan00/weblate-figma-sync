@@ -49,7 +49,7 @@ const setupHandlers = () => {
         )
       )
 
-      const countKeys = Object.entries(result).reduce((acc, [,translation]) => acc + Object.values(Object.values(translation)).length, 0);
+      const countKeys = Object.entries(result).reduce((acc, [, translation]) => acc + Object.values(Object.values(translation)).length, 0);
 
       emit<IWeblateSyncUpdate>('W_SYNC_UPDATE', `found ${countKeys} translation keys, importing...`);
 
@@ -57,50 +57,72 @@ const setupHandlers = () => {
 
       if (collection) {
         const modes = collection.modes;
-        Object.entries(result).forEach(
-          async ([lang, translation]) => {
-            if (config.languageAsMode) {
-              const modeId = modes.find((m) => m.name == lang)?.modeId ?? collection.addMode(lang);
 
-              const localVariables = await figma.variables.getLocalVariablesAsync('STRING');
-              const collectionVariables = localVariables.filter(v => v.variableCollectionId === config.collection);
-              const variableMap = new Map(collectionVariables.map(v => [v.name, v]));
+        let updatedKeys = 0;
+        let start = Date.now();
 
-              Object.entries(translation).forEach(
-                ([key, value]) => {
-                  const name = key.split('.').map(camelToTitle).join('/');
-                  const existingVariable = variableMap.get(name);
-                  if (existingVariable) {
-                    existingVariable.setValueForMode(modeId, value);
-                  } else {
-                    const newVariable = figma.variables.createVariable(name, collection, 'STRING');
-                    newVariable.setValueForMode(modeId, value);
-                  }
-                }
-              );
-            } else {
-              const modeId = collection.modes[0].modeId;
+        const pollNotify = () => {
+          const now = Date.now()
 
-              const sanitizedLanguage = lang.replace(/[^a-zA-Z0-9 ]/g, "").replace(/\s+/g, " ").trim()
-              const localVariables = await figma.variables.getLocalVariablesAsync('STRING');
-              const collectionVariables = localVariables.filter(v => v.variableCollectionId === config.collection);
-              const variableMap = new Map(collectionVariables.map(v => [v.name, v]));
-
-              Object.entries(translation).forEach(
-                ([key, value]) => {
-                  const name = [sanitizedLanguage, ...key.split('.').map(camelToTitle)].join('/');
-                  const existingVariable = variableMap.get(name);
-                  if (existingVariable) {
-                    existingVariable.setValueForMode(modeId, value);
-                  } else {
-                    const newVariable = figma.variables.createVariable(name, collection, 'STRING');
-                    newVariable.setValueForMode(modeId, value);
-                  }
-                }
-              );
-            }
+          if (now - start > 1000) {
+            start = now;
+            emit<IWeblateSyncUpdate>('W_SYNC_UPDATE', `updating, ${((updatedKeys / countKeys) * 100).toFixed(2)}% completed ...`);
           }
-        );
+
+        }
+
+        await Promise.all([
+          Object.entries(result).map(
+            async ([lang, translation]) => {
+              if (config.languageAsMode) {
+                const modeId = modes.find((m) => m.name == lang)?.modeId ?? collection.addMode(lang);
+
+                const localVariables = await figma.variables.getLocalVariablesAsync('STRING');
+                const collectionVariables = localVariables.filter(v => v.variableCollectionId === config.collection);
+                const variableMap = new Map(collectionVariables.map(v => [v.name, v]));
+
+                await Promise.all([
+                  Object.entries(translation).map(
+                    async ([key, value]) => {
+                      const name = key.split('.').map(camelToTitle).join('/');
+                      const existingVariable = variableMap.get(name);
+                      if (existingVariable) {
+                        existingVariable.setValueForMode(modeId, value);
+                      } else {
+                        const newVariable = figma.variables.createVariable(name, collection, 'STRING');
+                        newVariable.setValueForMode(modeId, value);
+                      }
+                      updatedKeys++;
+                      pollNotify();
+                    }
+                  )
+                ]);
+              } else {
+                const modeId = collection.modes[0].modeId;
+
+                const sanitizedLanguage = lang.replace(/[^a-zA-Z0-9 ]/g, "").replace(/\s+/g, " ").trim()
+                const localVariables = await figma.variables.getLocalVariablesAsync('STRING');
+                const collectionVariables = localVariables.filter(v => v.variableCollectionId === config.collection);
+                const variableMap = new Map(collectionVariables.map(v => [v.name, v]));
+
+                Object.entries(translation).forEach(
+                  ([key, value]) => {
+                    const name = [sanitizedLanguage, ...key.split('.').map(camelToTitle)].join('/');
+                    const existingVariable = variableMap.get(name);
+                    if (existingVariable) {
+                      existingVariable.setValueForMode(modeId, value);
+                    } else {
+                      const newVariable = figma.variables.createVariable(name, collection, 'STRING');
+                      newVariable.setValueForMode(modeId, value);
+                    }
+                    updatedKeys++;
+                    pollNotify();
+                  }
+                );
+              }
+            }
+          ),
+        ]);
       }
 
       emit<IWeblateSyncUpdate>('W_SYNC_UPDATE', `Import finished`);

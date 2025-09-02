@@ -16,7 +16,7 @@ const LoadingPage = () => {
       <Container style={{ height: 50 }} space='small' >
         <LoadingIndicator />
       </Container>
-      <Text>{syncInfo}</Text>
+      <Text align="center">{syncInfo}</Text>
     </Container>
   )
 }

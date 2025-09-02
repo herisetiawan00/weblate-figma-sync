@@ -25,27 +25,20 @@ const FormPage = ({ onSubmit }: { onSubmit: () => void }) => {
   const [collections, setCollections] = useState<ICollection[]>([]);
 
   useEffect(() => {
-    once<ICollectionResult>('C_COLLECTION_RESULT', (collections) => {
-      setCollections(collections)
-      emit<IConfigurationFetch>('C_CONFIGURATION_FETCH');
-    }
-    );
-  }, [collections]);
-
-  useEffect(() => {
+    emit<IConfigurationFetch>('C_CONFIGURATION_FETCH');
     once<IConfigurationResult>('C_CONFIGURATION_RESULT', (config) => {
       setBaseUrl(config.baseUrl);
       setToken(config.token);
       setRemember(config.remember);
       setLanguageAsMode(config.languageAsMode);
-      if (collections.some(c => c.id == config.collection)) {
-        setCollection(config.collection);
-      }
+      emit<ICollectionFetch>('C_COLLECTION_FETCH');
+      once<ICollectionResult>('C_COLLECTION_RESULT', (collections) => {
+        setCollections(collections);
+        if (collections.some(c => c.id == config.collection)) {
+          setCollection(config.collection);
+        }
+      });
     });
-  }, []);
-
-  useEffect(() => {
-    emit<ICollectionFetch>('C_COLLECTION_FETCH');
   }, []);
 
   const handleSyncButton = useCallback(() => {
