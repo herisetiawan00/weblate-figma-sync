@@ -30,8 +30,11 @@ jobs:
       # Change 'dist' to your build output folder; or use '.' to zip everything
       - name: Compress artifacts
         run: |
-          zip -r release-${{ github.sha }}.zip ./*
-      - name: Create Release for this commit
+          mkdir release artifacts
+          cp manifest.json release/
+          cp -r build release/
+          zip -r artifacts/release-${{ github.sha }}.zip release/*
+      - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: main-${{ github.sha }}        # unique tag per push
@@ -40,7 +43,7 @@ jobs:
             Automated build from **main**.
             - Commit: ${{ github.sha }}
             - Run: ${{ github.run_id }}
-          files: release-${{ github.sha }}.zip
+          files: artifacts/release-${{ github.sha }}.zip
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
